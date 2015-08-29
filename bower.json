@@ -1,0 +1,28 @@
+{
+  "name": "fluxo_relational",
+  "version": "0.0.1",
+  "homepage": "https://github.com/samuelsimoes/fluxo-relational",
+  "authors": [
+    "Samuel Simões <slip.cm@gmail.com>"
+  ],
+  "keywords": [
+    "fluxo",
+    "react",
+    "store",
+    "relational"
+  ],
+  "dependencies": {
+    "fluxo": ">=0.0.15"
+  },
+  "main": "dist/fluxo_relational.js",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "spec",
+    "src",
+    "Gruntfile.js",
+    "package.json",
+    "README.md"
+  ]
+}
