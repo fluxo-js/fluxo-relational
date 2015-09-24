@@ -11,38 +11,47 @@
 })(this, function(Fluxo) {
   var Relational = {};
 
+  var isObject = function(obj) {
+    var type = typeof obj;
+    return type === "function" || type === "object" && !!obj;
+  };
+
   Relational.Base = {
-    currentStoreValue: function() {
-      return this.store.data[this.key];
+    create: function () {
+      var extensions = Array.prototype.slice.call(arguments);
+
+      extensions.unshift({}, this);
+
+      var extension = Fluxo.extend.apply(null, extensions);
+
+      return extension;
     },
 
-    parse: function(value) {
-      var parsedValue = value;
-
-      if (!value && value !== []) {
-        this.cancelChildListening();
-      } else if (value instanceof this.storeClass) {
-        this.listenChildChanges(value);
+    parse: function (newValue) {
+      if (!isObject(newValue) && newValue !== []) {
+        this.cancelListening();
+        this.currentValue = newValue;
+      } else if (this.currentValue && !newValue._fluxo) {
+        this.update(newValue);
+      } else if (newValue._fluxo) {
+        this.currentValue = newValue;
+        this.setupListening();
       } else {
-        if (this.currentStoreValue() instanceof this.storeClass) {
-          this.updateCurrentChild(value);
-          parsedValue = this.currentStoreValue();
-        } else {
-          parsedValue = this.instantiateStore(value);
-        }
+        this.currentValue = this.createStore(newValue);
+        this.setupListening();
       }
 
-      return parsedValue;
+      return this.currentValue;
     },
 
-    cancelChildListening: function () {
+    cancelListening: function () {
       if (!this.changeEventCanceler) { return; }
       this.changeEventCanceler.call();
       delete this.changeEventCanceler;
     },
 
-    listenChildChanges: function(store) {
-      this.cancelChildListening();
+    setupListening: function() {
+      this.cancelListening();
 
       var onStoreEvent = function(eventName) {
         var args = Array.prototype.slice.call(arguments, 1);
@@ -52,80 +61,68 @@
         this.store.triggerEvent.apply(this.store, args);
       };
 
-      this.changeEventCanceler = store.on(["*"], onStoreEvent.bind(this));
+      this.changeEventCanceler = this.currentValue.on(["*"], onStoreEvent.bind(this));
+    }
+  };
+
+  Relational.HasMany = Relational.Base.create({
+    createStore: function (value) {
+      return Fluxo.CollectionStore.create(this.storeObject, { stores: value });
     },
 
-    instantiateStore: function (data) {
-      var store = new this.storeClass(data);
-      this.listenChildChanges(store);
-      return store;
+    update: function (value) {
+      this.currentValue.setStores(value);
     }
-  };
+  });
 
-  Relational.HasOne = function(options) {
-    this.store = options.store;
-    this.storeClass = options.storeClass || Fluxo.Store;
-    this.key = options.key;
-  };
+  Relational.HasOne = Relational.Base.create({
+    createStore: function (value) {
+      return Fluxo.ObjectStore.create(this.storeObject, { data: value });
+    },
 
-  Relational.HasMany = function(options) {
-    this.store = options.store;
-    this.storeClass = options.storeClass || Fluxo.CollectionStore;
-    this.key = options.key;
-  };
-
-  Relational.HasOne.prototype = Fluxo.extend({
-    updateCurrentChild: function(value) {
-      this.currentStoreValue().set(value);
+    update: function (value) {
+      this.currentValue.set(value);
     }
-  }, Relational.Base);
+  });
 
-  Relational.HasMany.prototype = Fluxo.extend({
-    updateCurrentChild: function(value) {
-      this.currentStoreValue().resetFromData(value);
-    }
-  }, Relational.Base);
-
-  Relational.Store = Fluxo.Store.extend({
-    parsedRelations: {},
-
-    _constructor: function () {
+  Relational.ObjectStore = Fluxo.ObjectStore.create({
+    setup: function () {
+      this.relations = Fluxo.extend({}, this.relations);
       this.parseRelations();
-      Fluxo.Store.prototype._constructor.apply(this, arguments);
+      Fluxo.ObjectStore.setup.apply(this, arguments);
     },
 
     parseRelations: function() {
       for (var relationKey in this.relations) {
         var relation = this.relations[relationKey];
 
-        this.parsedRelations[relationKey] = new relation.type({
-          store: this,
-          key: relationKey,
-          storeClass: relation.storeClass
-        });
+        this.relations[relationKey] =
+          relation.type.create({
+            key: relationKey,
+            store: this,
+            storeObject: {}
+          }, relation);
       }
     },
 
     setAttribute: function(attribute, value, options) {
-      var relation = this.parsedRelations[attribute];
+      var relation = this.relations[attribute];
 
       if (relation) {
         value = relation.parse(value);
       }
 
-      return Fluxo.Store.prototype.setAttribute.call(this, attribute, value, options);
+      return Fluxo.ObjectStore.setAttribute.call(this, attribute, value, options);
     },
 
     toJSON: function() {
-      var json = {};
+      var json = Fluxo.ObjectStore.toJSON.call(this);
 
-      for (var attributeName in this.data) {
-        var value = this.data[attributeName];
+      for (var attributeName in json) {
+        var value = json[attributeName];
 
         if (typeof value.toJSON === "function") {
           json[attributeName] = value.toJSON();
-        } else {
-          json[attributeName] = value;
         }
       }
 
