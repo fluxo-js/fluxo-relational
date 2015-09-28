@@ -67,7 +67,15 @@
 
   Relational.HasMany = Relational.Base.create({
     createStore: function (value) {
-      return Fluxo.CollectionStore.create(this.storeObject, { stores: value });
+      var storeObject;
+
+      if (this.collectionObject) {
+        storeObject = this.collectionObject;
+      } else {
+        storeObject = { store: (this.storeObject || {}) };
+      }
+
+      return Fluxo.CollectionStore.create(storeObject, { stores: value });
     },
 
     update: function (value) {
@@ -77,7 +85,7 @@
 
   Relational.HasOne = Relational.Base.create({
     createStore: function (value) {
-      return Fluxo.ObjectStore.create(this.storeObject, { data: value });
+      return Fluxo.ObjectStore.create((this.storeObject || {}), { data: value });
     },
 
     update: function (value) {
@@ -99,8 +107,7 @@
         this.relations[relationKey] =
           relation.type.create({
             key: relationKey,
-            store: this,
-            storeObject: {}
+            store: this
           }, relation);
       }
     },
