@@ -65,6 +65,8 @@
   };
 
   Relational.HasMany = Relational.Base.create({
+    relationName: "HasMany",
+
     createStore: function (value) {
       var storeObject;
 
@@ -83,6 +85,8 @@
   });
 
   Relational.HasOne = Relational.Base.create({
+    relationName: "HasOne",
+
     createStore: function (value) {
       return Fluxo.ObjectStore.create((this.storeObject || {}), { data: value });
     },
