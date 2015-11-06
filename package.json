@@ -3,24 +3,23 @@
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/samuelsimoes/fluxo-relational"
+    "url": "https://github.com/fluxo-js/fluxo-relational"
   },
   "author": {
     "name": "Samuel Simões",
     "email": "slip.cm@gmail.com"
   },
   "devDependencies": {
+    "bower": "*",
     "chai": "*",
     "chai-spies": "*",
     "grunt": "*",
     "grunt-cli": "*",
-    "grunt-contrib-clean": "*",
-    "grunt-contrib-concat": "^0.5.1",
-    "grunt-contrib-uglify": "*",
     "grunt-mocha": "*",
     "grunt-settings": "*",
+    "grunt-webpack": "^1.0.11",
     "mocha": "*",
-    "bower": "*"
+    "webpack": "^1.12.2"
   },
   "scripts": {
     "test": "./node_modules/.bin/grunt test"

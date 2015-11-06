@@ -1,4 +1,5 @@
-var config = require("grunt-settings");
+var config = require("grunt-settings"),
+    webpack = require("webpack");
 
 module.exports = function (grunt) {
   config.init(grunt);
@@ -16,42 +17,41 @@ module.exports = function (grunt) {
   });
 
   config.set("meta.banner",
-    '/*! <%= pkg.name %> v<%= pkg.version %> | ' +
+    '<%= pkg.name %> v<%= pkg.version %> | ' +
     '(c) <%= grunt.template.today("yyyy") %> <%= pkg.author.name %> |' +
-    ' <%= pkg.author.url %> */'
+    ' <%= pkg.repository.url %>'
   );
 
-  config.set("clean.dist.src", ["dist"]);
-
-  config.set("concat.dist", {
-    src: ["src/fluxo_relational.js"],
-    dest: "dist/fluxo_relational.js",
-    options: {
-      banner: "<%= meta.banner %>\n"
+  config.set("webpack", {
+    build: {
+      entry: "./src/fluxo_relational.js",
+      devtool: ["source-map"],
+      output: {
+        path: "./dist/",
+        filename: "fluxo_relational.js",
+        libraryTarget: "umd",
+        library: "Fluxo",
+        sourceMapFilename: "fluxo_relational.map",
+        sourcePrefix: ""
+      },
+      externals: {
+        "fluxo": {
+          amd: "fluxo",
+          commonjs: "fluxo-js",
+          root: "Fluxo"
+        }
+      },
+      plugins: [
+        new webpack.BannerPlugin("<%= meta.banner %>")
+      ]
     }
   });
 
-  config.set("uglify.dist", {
-    options: {
-      banner: "<%= meta.banner %>",
-      sourceMap: true,
-      sourceMapName: "dist/fluxo_relational.map"
-    },
-
-    files: {
-      "dist/fluxo_relational.min.js": "src/fluxo_relational.js"
-    }
-  });
-
-  grunt.loadNpmTasks("grunt-contrib-clean");
-  grunt.loadNpmTasks("grunt-contrib-uglify");
-  grunt.loadNpmTasks("grunt-contrib-concat");
+  grunt.loadNpmTasks("grunt-webpack");
   grunt.loadNpmTasks("grunt-mocha");
 
   config.registerTask("build", [
-    "clean:dist",
-    "concat:dist",
-    "uglify:dist"
+    "webpack"
   ]);
 
   grunt.registerTask("test", ["build", "mocha"]);
