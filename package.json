@@ -10,6 +10,10 @@
     "email": "slip.cm@gmail.com"
   },
   "devDependencies": {
+    "babel": "^5.0.0",
+    "babel-core": "^5.0.0",
+    "babel-loader": "^5.0.0",
+    "babel-runtime": "^5.0.0",
     "bower": "*",
     "chai": "*",
     "chai-spies": "*",

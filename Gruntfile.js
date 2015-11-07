@@ -35,11 +35,19 @@ module.exports = function (grunt) {
         sourcePrefix: ""
       },
       externals: {
-        "fluxo": {
+        "fluxo-js": {
           amd: "fluxo",
           commonjs: "fluxo-js",
           root: "Fluxo"
         }
+      },
+      module: {
+        loaders: [
+          {
+            test: /\.js?$/,
+            loader: "babel"
+          }
+        ]
       },
       plugins: [
         new webpack.BannerPlugin("<%= meta.banner %>")
