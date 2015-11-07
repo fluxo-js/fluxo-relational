@@ -23,6 +23,21 @@ module.exports = function (grunt) {
   );
 
   config.set("webpack", {
+    test: {
+      entry: "./spec/specs.js",
+      output: {
+        path: "./spec/",
+        filename: "specs_bundle.js",
+      },
+      module: {
+        loaders: [
+          {
+            test: /\.js?$/,
+            loader: "babel"
+          }
+        ]
+      }
+    },
     build: {
       entry: "./src/fluxo_relational.js",
       devtool: ["source-map"],
@@ -62,5 +77,5 @@ module.exports = function (grunt) {
     "webpack"
   ]);
 
-  grunt.registerTask("test", ["build", "mocha"]);
+  grunt.registerTask("test", ["build", "webpack:test", "mocha"]);
 };

@@ -1,14 +1,12 @@
-describe("Fluxo.Relation.HasOne", function () {
-  before(function() {
-    Post = {
-      relations: {
-        author: {
-          type: Fluxo.Relational.HasOne
-        }
-      }
-    };
-  });
+var Post = {
+  relations: {
+    author: {
+      type: Fluxo.Relational.HasOne
+    }
+  }
+};
 
+describe("Fluxo.Relation.HasOne", function () {
   it("instantiate store on construction", function() {
     var post = Fluxo.Relational.ObjectStore.create(Post, {
       data: {

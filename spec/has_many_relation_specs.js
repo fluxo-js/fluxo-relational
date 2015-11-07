@@ -1,14 +1,12 @@
-describe("Fluxo.Relation.HasMany", function () {
-  before(function() {
-    Post = {
-      relations: {
-        comments: {
-          type: Fluxo.Relational.HasMany
-        }
-      }
-    };
-  });
+var Post = {
+  relations: {
+    comments: {
+      type: Fluxo.Relational.HasMany
+    }
+  }
+};
 
+describe("Fluxo.Relation.HasMany", function () {
   it("instantiate collection store on construction", function() {
     var post = Fluxo.Relational.ObjectStore.create(Post, {
       data: {
