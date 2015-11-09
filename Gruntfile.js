@@ -77,5 +77,5 @@ module.exports = function (grunt) {
     "webpack"
   ]);
 
-  grunt.registerTask("test", ["build", "webpack:test", "mocha"]);
+  grunt.registerTask("test", ["webpack:test", "mocha"]);
 };

@@ -3,19 +3,23 @@ import Fluxo from "fluxo-js";
 
 export default class {
   constructor (options) {
-    Fluxo.extend(this, options);
+    Fluxo.extend(this, { storeObject: this.constructor.defaultStoreObject }, options);
   }
 
   parse (newValue) {
     if (!isObject(newValue) && newValue !== []) {
+      // cleaning value
       this.cancelListening();
       this.currentValue = newValue;
-    } else if (this.currentValue && !newValue._fluxo) {
+    } else if (this.currentValue && !(newValue instanceof Fluxo.ObjectStore)) {
+      // updating the already parsed store
       this.update(newValue);
-    } else if (newValue._fluxo) {
+    } else if ((newValue instanceof Fluxo.ObjectStore)) {
+      // attaching an already parsed store
       this.currentValue = newValue;
       this.setupListening();
     } else {
+      // creating store and attaching
       this.currentValue = this.createStore(newValue);
       this.setupListening();
     }
@@ -29,15 +33,15 @@ export default class {
     delete this.changeEventCanceler;
   }
 
+  createStore (value) {
+    return new this.storeObject(value);
+  }
+
   setupListening () {
     this.cancelListening();
 
-    var onStoreEvent = function(eventName) {
-      var args = Array.prototype.slice.call(arguments, 1);
-
-      args.unshift((this.key + ":" + eventName));
-
-      this.store.triggerEvent.apply(this.store, args);
+    var onStoreEvent = function (eventName, ...args) {
+      this.store.triggerEvent(`${this.key}:${eventName}`, ...args);
     };
 
     this.changeEventCanceler =

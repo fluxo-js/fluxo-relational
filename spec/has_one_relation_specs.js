@@ -1,34 +1,26 @@
-var Post = {
-  relations: {
-    author: {
-      type: Fluxo.Relational.HasOne
-    }
+var Fluxo = require("../src/fluxo_relational.js");
+
+class Post extends Fluxo.Relational.ObjectStore {}
+
+Post.relations = {
+  author: {
+    type: Fluxo.Relational.HasOne
   }
 };
 
 describe("Fluxo.Relation.HasOne", function () {
   it("instantiate store on construction", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        author: { name: "Foo" }
-      }
-    });
+    var post = new Post({ content: "The post", author: { name: "Foo" } });
 
     expect(post.data.author.data.name).to.be.eql("Foo");
 
     expect(post.data.content).to.be.eql("The post");
 
-    expect(post.data.author._fluxo).to.be.true;
+    expect(post.data.author).to.be.an.instanceOf(Fluxo.ObjectStore);
   });
 
   it("bubble the change events", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        author: { name: "Foo" }
-      }
-    });
+    var post = new Post({ content: "The post", author: { name: "Foo" } });
 
     var onChangeCallback = chai.spy();
 
@@ -42,14 +34,9 @@ describe("Fluxo.Relation.HasOne", function () {
   });
 
   it("nullify the attribute with falsy values", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        author: { name: "Samuel" }
-      }
-    });
+    var post = new Post({ content: "The post", author: { name: "Foo" } });
 
-    expect(post.data.author._fluxo).to.be.true;
+    expect(post.data.author).to.be.an.instanceOf(Fluxo.ObjectStore);
 
     post.setAttribute("author", null);
 
@@ -57,13 +44,9 @@ describe("Fluxo.Relation.HasOne", function () {
   });
 
   it("accepts a store instance", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post"
-      }
-    });
+    var post = new Post({ content: "The post" });
 
-    var author = Fluxo.ObjectStore.create({ data: { name: "Foo" } });
+    var author = new Fluxo.ObjectStore({ name: "Foo" });
 
     post.setAttribute("author", author);
 
@@ -81,35 +64,27 @@ describe("Fluxo.Relation.HasOne", function () {
   });
 
   it("generates the correct JSON", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        author: { name: "Foo" }
-      }
-    });
+    var post = new Post({ content: "The post", author: { name: "Foo" } });
 
     expect(post.toJSON().content).to.be.eql("The post");
     expect(post.toJSON().author.name).to.be.eql("Foo");
   });
 
   it("works with other store class", function() {
-    var Category = {
-      customMethod: {}
+    class Category extends Fluxo.ObjectStore {
+      customMethod () {}
+    }
+
+    class CustomPost extends Fluxo.Relational.ObjectStore {}
+
+    CustomPost.relations = {
+      category: {
+        type: Fluxo.Relational.HasOne,
+        storeObject: Category
+      }
     };
 
-    var post = Fluxo.Relational.ObjectStore.create({
-      data: {
-        content: "The post",
-        category: { name: "Foo" }
-      },
-
-      relations: {
-        category: {
-          type: Fluxo.Relational.HasOne,
-          storeObject: Category
-        }
-      }
-    });
+    var post = new CustomPost({ content: "The post", category: { name: "Foo" } });
 
     expect(post.data.category.data.name).to.be.eql("Foo");
     expect(post.data.category.setAttribute).to.exist;

@@ -12,7 +12,7 @@
     "relational"
   ],
   "dependencies": {
-    "fluxo": ">=0.0.15"
+    "fluxo": ">=0.0.21"
   },
   "main": "dist/fluxo_relational.js",
   "ignore": [

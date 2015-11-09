@@ -1,8 +1,10 @@
+import Fluxo from "fluxo-js";
+
 export default class extends Fluxo.ObjectStore {
-  constructor (attributes) {
-    super(attributes);
-    this.relations = Fluxo.extend({}, this.relations);
+  initialize () {
+    this.relations = { ...this.constructor.relations };
     this.parseRelations();
+    super.initialize(...arguments);
   }
 
   parseRelations () {
@@ -10,25 +12,26 @@ export default class extends Fluxo.ObjectStore {
       var relation = this.relations[relationKey];
 
       this.relations[relationKey] =
-        relation.type.create({
+        new relation.type({
+          ...relation,
           key: relationKey,
           store: this
-        }, relation);
+        });
     }
   }
 
-  setAttribute (attribute, value) {
+  setAttribute (attribute, value, ...args) {
     var relation = this.relations[attribute];
 
     if (relation) {
       value = relation.parse(value);
     }
 
-    return super.setAttribute(...arguments);
+    return super.setAttribute(attribute, value, ...args);
   }
 
   toJSON () {
-    var json = Fluxo.ObjectStore.toJSON.call(this);
+    var json = super.toJSON(...arguments);
 
     for (var attributeName in json) {
       var value = json[attributeName];

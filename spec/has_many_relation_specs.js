@@ -1,19 +1,16 @@
-var Post = {
-  relations: {
-    comments: {
-      type: Fluxo.Relational.HasMany
-    }
+var Fluxo = require("../src/fluxo_relational.js");
+
+class Post extends Fluxo.Relational.ObjectStore {}
+
+Post.relations = {
+  comments: {
+    type: Fluxo.Relational.HasMany
   }
 };
 
 describe("Fluxo.Relation.HasMany", function () {
   it("instantiate collection store on construction", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        comments: [{ name: "Foo" }]
-      }
-    });
+    var post = new Post({ content: "The post", comments: [{ name: "Foo" }] });
 
     expect(post.toJSON().comments.stores[0].name).to.be.eql("Foo");
 
@@ -21,12 +18,7 @@ describe("Fluxo.Relation.HasMany", function () {
   });
 
   it("bubble events", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        comments: []
-      }
-    });
+    var post = new Post({ content: "The post", comments: [] });
 
     var onChangeCallback = chai.spy();
 
@@ -38,12 +30,7 @@ describe("Fluxo.Relation.HasMany", function () {
   });
 
   it("generates the correct JSON", function() {
-    var post = Fluxo.Relational.ObjectStore.create(Post, {
-      data: {
-        content: "The post",
-        comments: [{ name: "Foo" }]
-      }
-    });
+    var post = new Post({ content: "The post", comments: [{ name: "Foo" }] });
 
     expect(post.toJSON().content).to.be.eql("The post");
     expect(post.toJSON().comments.stores[0].name).to.be.eql("Foo");

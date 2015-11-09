@@ -57,55 +57,38 @@ return /******/ (function(modules) { // webpackBootstrap
 
 "use strict";
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
-
-var Fluxo = __webpack_require__(1),
-    Relational = {
-  HasOne: __webpack_require__(2),
-  HasMany: __webpack_require__(5)
-};
-
-Relational.ObjectStore = Fluxo.ObjectStore.create({
-  setup: function setup() {
-    this.relations = Fluxo.extend({}, this.relations);
-    this.parseRelations();
-    Fluxo.ObjectStore.setup.apply(this, arguments);
-  },
-
-  parseRelations: function parseRelations() {
-    for (var relationKey in this.relations) {
-      var relation = this.relations[relationKey];
-
-      this.relations[relationKey] = new relation.type(_extends({ key: relationKey, store: this }, relation));
-    }
-  },
-
-  setAttribute: function setAttribute(attribute, value, options) {
-    var relation = this.relations[attribute];
-
-    if (relation) {
-      value = relation.parse(value);
-    }
-
-    return Fluxo.ObjectStore.setAttribute.call(this, attribute, value, options);
-  },
-
-  toJSON: function toJSON() {
-    var json = Fluxo.ObjectStore.toJSON.call(this);
-
-    for (var attributeName in json) {
-      var value = json[attributeName];
-
-      if (typeof value.toJSON === "function") {
-        json[attributeName] = value.toJSON();
-      }
-    }
-
-    return json;
-  }
+Object.defineProperty(exports, "__esModule", {
+  value: true
 });
 
-module.exports = _extends({}, Fluxo, { Relational: Relational });
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+var _fluxoJs = __webpack_require__(1);
+
+var _fluxoJs2 = _interopRequireDefault(_fluxoJs);
+
+var _has_oneJs = __webpack_require__(2);
+
+var _has_oneJs2 = _interopRequireDefault(_has_oneJs);
+
+var _has_manyJs = __webpack_require__(5);
+
+var _has_manyJs2 = _interopRequireDefault(_has_manyJs);
+
+var _object_storeJs = __webpack_require__(6);
+
+var _object_storeJs2 = _interopRequireDefault(_object_storeJs);
+
+exports["default"] = _extends({}, _fluxoJs2["default"], {
+  Relational: {
+    HasOne: _has_oneJs2["default"],
+    HasMany: _has_manyJs2["default"],
+    ObjectStore: _object_storeJs2["default"]
+  }
+});
+module.exports = exports["default"];
 
 /***/ },
 /* 1 */
@@ -151,11 +134,6 @@ var HasOne = (function (_Base) {
   }
 
   _createClass(HasOne, [{
-    key: "createStore",
-    value: function createStore(value) {
-      return _fluxoJs2["default"].ObjectStore.create(this.storeObject || {}, { data: value });
-    }
-  }, {
     key: "update",
     value: function update(value) {
       this.currentValue.set(value);
@@ -164,6 +142,8 @@ var HasOne = (function (_Base) {
 
   return HasOne;
 })(_baseJs2["default"]);
+
+HasOne.defaultStoreObject = _fluxoJs2["default"].ObjectStore;
 
 exports["default"] = HasOne;
 module.exports = exports["default"];
@@ -196,21 +176,25 @@ var _default = (function () {
   function _default(options) {
     _classCallCheck(this, _default);
 
-    _fluxoJs2["default"].extend(this, options);
+    _fluxoJs2["default"].extend(this, { storeObject: this.constructor.defaultStoreObject }, options);
   }
 
   _createClass(_default, [{
     key: "parse",
     value: function parse(newValue) {
       if (!(0, _is_objectJs2["default"])(newValue) && newValue !== []) {
+        // cleaning value
         this.cancelListening();
         this.currentValue = newValue;
-      } else if (this.currentValue && !newValue._fluxo) {
+      } else if (this.currentValue && !(newValue instanceof _fluxoJs2["default"].ObjectStore)) {
+        // updating the already parsed store
         this.update(newValue);
-      } else if (newValue._fluxo) {
+      } else if (newValue instanceof _fluxoJs2["default"].ObjectStore) {
+        // attaching an already parsed store
         this.currentValue = newValue;
         this.setupListening();
       } else {
+        // creating store and attaching
         this.currentValue = this.createStore(newValue);
         this.setupListening();
       }
@@ -227,16 +211,23 @@ var _default = (function () {
       delete this.changeEventCanceler;
     }
   }, {
+    key: "createStore",
+    value: function createStore(value) {
+      return new this.storeObject(value);
+    }
+  }, {
     key: "setupListening",
     value: function setupListening() {
       this.cancelListening();
 
       var onStoreEvent = function onStoreEvent(eventName) {
-        var args = Array.prototype.slice.call(arguments, 1);
+        var _store;
 
-        args.unshift(this.key + ":" + eventName);
+        for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+          args[_key - 1] = arguments[_key];
+        }
 
-        this.store.triggerEvent.apply(this.store, args);
+        (_store = this.store).triggerEvent.apply(_store, [this.key + ":" + eventName].concat(args));
       };
 
       this.changeEventCanceler = this.currentValue.on(["*"], onStoreEvent.bind(this));
@@ -305,19 +296,6 @@ var HasMany = (function (_Base) {
   }
 
   _createClass(HasMany, [{
-    key: "createStore",
-    value: function createStore(value) {
-      var storeObject;
-
-      if (this.collectionObject) {
-        storeObject = this.collectionObject;
-      } else {
-        storeObject = { store: this.storeObject || {} };
-      }
-
-      return _fluxoJs2["default"].CollectionStore.create(storeObject, { stores: value });
-    }
-  }, {
     key: "update",
     value: function update(value) {
       this.currentValue.setStores(value);
@@ -327,7 +305,103 @@ var HasMany = (function (_Base) {
   return HasMany;
 })(_baseJs2["default"]);
 
+HasMany.defaultStoreObject = _fluxoJs2["default"].CollectionStore;
+
 exports["default"] = HasMany;
+module.exports = exports["default"];
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _get = function get(_x, _x2, _x3) { var _again = true; _function: while (_again) { var object = _x, property = _x2, receiver = _x3; _again = false; if (object === null) object = Function.prototype; var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { _x = parent; _x2 = property; _x3 = receiver; _again = true; desc = parent = undefined; continue _function; } } else if ("value" in desc) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } } };
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var _fluxoJs = __webpack_require__(1);
+
+var _fluxoJs2 = _interopRequireDefault(_fluxoJs);
+
+var _default = (function (_Fluxo$ObjectStore) {
+  _inherits(_default, _Fluxo$ObjectStore);
+
+  function _default() {
+    _classCallCheck(this, _default);
+
+    _get(Object.getPrototypeOf(_default.prototype), "constructor", this).apply(this, arguments);
+  }
+
+  _createClass(_default, [{
+    key: "initialize",
+    value: function initialize() {
+      this.relations = _extends({}, this.constructor.relations);
+      this.parseRelations();
+      _get(Object.getPrototypeOf(_default.prototype), "initialize", this).apply(this, arguments);
+    }
+  }, {
+    key: "parseRelations",
+    value: function parseRelations() {
+      for (var relationKey in this.relations) {
+        var relation = this.relations[relationKey];
+
+        this.relations[relationKey] = new relation.type(_extends({}, relation, {
+          key: relationKey,
+          store: this
+        }));
+      }
+    }
+  }, {
+    key: "setAttribute",
+    value: function setAttribute(attribute, value) {
+      var _get2;
+
+      var relation = this.relations[attribute];
+
+      if (relation) {
+        value = relation.parse(value);
+      }
+
+      for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+        args[_key - 2] = arguments[_key];
+      }
+
+      return (_get2 = _get(Object.getPrototypeOf(_default.prototype), "setAttribute", this)).call.apply(_get2, [this, attribute, value].concat(args));
+    }
+  }, {
+    key: "toJSON",
+    value: function toJSON() {
+      var json = _get(Object.getPrototypeOf(_default.prototype), "toJSON", this).apply(this, arguments);
+
+      for (var attributeName in json) {
+        var value = json[attributeName];
+
+        if (typeof value.toJSON === "function") {
+          json[attributeName] = value.toJSON();
+        }
+      }
+
+      return json;
+    }
+  }]);
+
+  return _default;
+})(_fluxoJs2["default"].ObjectStore);
+
+exports["default"] = _default;
 module.exports = exports["default"];
 
 /***/ }
